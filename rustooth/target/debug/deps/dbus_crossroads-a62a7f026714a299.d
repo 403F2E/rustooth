@@ -1,0 +1,11 @@
+/home/puppeteer/Desktop/Stuff/Projects/Dev/rustooth/rustooth/target/debug/deps/dbus_crossroads-a62a7f026714a299.d: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/context.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/crossroads.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/ifacedesc.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/stdimpl.rs
+
+/home/puppeteer/Desktop/Stuff/Projects/Dev/rustooth/rustooth/target/debug/deps/libdbus_crossroads-a62a7f026714a299.rlib: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/context.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/crossroads.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/ifacedesc.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/stdimpl.rs
+
+/home/puppeteer/Desktop/Stuff/Projects/Dev/rustooth/rustooth/target/debug/deps/libdbus_crossroads-a62a7f026714a299.rmeta: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/context.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/crossroads.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/ifacedesc.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/stdimpl.rs
+
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/lib.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/context.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/crossroads.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/ifacedesc.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dbus-crossroads-0.5.3/src/stdimpl.rs:

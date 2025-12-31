@@ -18,6 +18,16 @@ class BluetoothService {
     return await fb.FlutterBluePlus.adapterState.first == fb.BluetoothAdapterState.on;
   }
 
+  // Get currently connected devices
+  List<fb.BluetoothDevice> get connectedDevices {
+    return fb.FlutterBluePlus.connectedDevices;
+  }
+
+  // Get a list of bonded (paired) devices.
+  Future<List<fb.BluetoothDevice>> getBondedDevices() async {
+    return await fb.FlutterBluePlus.bondedDevices;
+  }
+
   // Request permissions. Location permission is often required for scanning.
   Future<bool> requestPermissions() async {
     // For Android 12 and above, Bluetooth permissions are required.
@@ -83,5 +93,22 @@ class BluetoothService {
     fb.BluetoothDevice device,
   ) async {
     return await device.discoverServices();
+  }
+
+  // Find a writable characteristic
+  Future<fb.BluetoothCharacteristic?> findWritableCharacteristic(fb.BluetoothDevice device) async {
+    try {
+      List<fb.BluetoothService> services = await device.discoverServices();
+      for (var service in services) {
+        for (var characteristic in service.characteristics) {
+          if (characteristic.properties.write || characteristic.properties.writeWithoutResponse) {
+            return characteristic;
+          }
+        }
+      }
+    } catch (e) {
+      print("Error finding services: $e");
+    }
+    return null;
   }
 }
