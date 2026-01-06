@@ -1,198 +1,172 @@
-use bluer::rfcomm::{Listener, SocketAddr};
-use std::env;
-use std::fs::OpenOptions;
-use std::io::{Read, Write};
-use std::path::Path;
-use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
-use tokio::task;
+mod handle_command;
 
-const CHANNEL: u8 = 1;
-const HELLO_MSG: &[u8] = b"Hello from rustooth\n";
+use bluer::{
+    adv::Advertisement,
+    gatt::{
+        local::{
+            characteristic_control, service_control, Application, Characteristic,
+            CharacteristicControlEvent, CharacteristicNotify, CharacteristicNotifyMethod,
+            CharacteristicWrite, CharacteristicWriteMethod, Service,
+        },
+        CharacteristicReader, CharacteristicWriter,
+    },
+    Uuid,
+};
+use futures::{future, pin_mut, StreamExt};
+use handle_command::handle_command;
+use std::{collections::BTreeMap, time::Duration};
+use tokio::{
+    io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader},
+    time::{interval, sleep},
+};
 
-#[tokio::main]
+const SERVICE_UUID: Uuid = Uuid::from_u128(0x12345678_1234_5678_1234_56789abc0000);
+const CHARACTERISTIC_UUID: Uuid = Uuid::from_u128(0x12345678_1234_5678_1234_56789abc0001);
+const MANUFACTURER_ID: u16 = 0xf00d;
+
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> bluer::Result<()> {
-    // Program supports two modes:
-    // 1) If a /dev/rfcommX device exists (or user passes `dev:/path` as first arg), we open it
-    //    and communicate over the serial device (useful when the connection is already bound
-    //    to a TTY by external tools).
-    // 2) Otherwise we run an RFCOMM Listener and accept the connection from the allowed Bluetooth
-    //    address provided as the first argument (AA:BB:CC:DD:EE:FF).
-    //
-    // Usage:
-    //  - Automatic serial mode detection: `cargo run` (if /dev/rfcomm0 exists)
-    //  - Explicit serial device: `cargo run -- dev:/dev/rfcomm0`
-    //  - RFCOMM listener mode: `cargo run -- AA:BB:CC:DD:EE:FF`
-    let args: Vec<String> = env::args().collect();
-
-    // Determine serial path:
-    let explicit_dev: Option<String> = args.get(1).and_then(|s| {
-        if s.starts_with("dev:") {
-            Some(s["dev:".len()..].to_string())
-        } else if s.starts_with('/') {
-            Some(s.clone())
-        } else {
-            None
-        }
-    });
-
-    // If explicit device provided, use it. Otherwise, auto-detect /dev/rfcomm0.
-    let serial_device = if let Some(dev) = explicit_dev {
-        Some(dev)
-    } else if Path::new("/dev/rfcomm0").exists() {
-        Some("/dev/rfcomm0".to_string())
-    } else {
-        None
-    };
-
-    if let Some(dev_path) = serial_device {
-        println!("Operating in serial (/dev) mode using device: {}", dev_path);
-
-        // Spawn blocking work to interact with the serial device using std::fs IO.
-        // This avoids needing extra crates for async serial; it's adequate when the device
-        // is already bound and behaves as a TTY.
-        let dev = dev_path.clone();
-        let res = task::spawn_blocking(move || -> std::io::Result<()> {
-            // Open for read and write. If this fails, return the error to be printed below.
-            let mut f = OpenOptions::new().read(true).write(true).open(&dev)?;
-
-            // Send hello right away.
-            if let Err(e) = f.write_all(HELLO_MSG) {
-                eprintln!("Failed to write hello to {}: {}", dev, e);
-                return Err(e);
-            }
-            let _ = f.flush();
-
-            let mut buf = [0u8; 1024];
-            loop {
-                match f.read(&mut buf) {
-                    Ok(0) => {
-                        println!("Serial device closed (EOF)");
-                        break;
-                    }
-                    Ok(n) => {
-                        println!("Read {} bytes from serial device", n);
-                        // Echo them back
-                        if let Err(e) = f.write_all(&buf[..n]) {
-                            eprintln!("Failed to write to serial device: {}", e);
-                            break;
-                        }
-                        let _ = f.flush();
-                    }
-                    Err(e) => {
-                        eprintln!("Serial read error: {}", e);
-                        break;
-                    }
-                }
-            }
-
-            Ok(())
-        })
-        .await;
-
-        match res {
-            Ok(Ok(())) => {
-                println!("Serial session finished normally.");
-            }
-            Ok(Err(e)) => {
-                eprintln!("Serial session IO error: {}", e);
-            }
-            Err(join_err) => {
-                eprintln!("Serial task panicked or was cancelled: {}", join_err);
-            }
-        }
-
-        return Ok(());
-    }
-
-    // No serial device; expect an allowed Bluetooth address as the first arg.
-    if args.len() < 2 {
-        eprintln!("No serial device found and no allowed Bluetooth address provided.");
-        eprintln!("Usage examples:");
-        eprintln!("  cargo run -- dev:/dev/rfcomm0        # explicit serial device");
-        eprintln!("  cargo run -- AA:BB:CC:DD:EE:FF      # RFCOMM listener mode");
-        return Ok(());
-    }
-    let allowed_addr = args[1].to_uppercase();
-
     let session = bluer::Session::new().await?;
     let adapter = session.default_adapter().await?;
     adapter.set_powered(true).await?;
-    adapter.set_discoverable(true).await?;
-    let adapter_addr = adapter.address().await?;
-
-    let local_sa = SocketAddr::new(adapter_addr, CHANNEL);
-    let listener = Listener::bind(local_sa).await?;
 
     println!(
-        "Listening on {} channel {}. Press enter to quit.",
-        listener.as_ref().local_addr()?.addr,
-        listener.as_ref().local_addr()?.channel
+        "Advertising on Bluetooth adapter {} with address {}",
+        adapter.name(),
+        adapter.address().await?
     );
+    let mut manufacturer_data = BTreeMap::new();
+    manufacturer_data.insert(MANUFACTURER_ID, vec![0x21, 0x22, 0x23, 0x24]);
+    let le_advertisement = Advertisement {
+        service_uuids: vec![SERVICE_UUID].into_iter().collect(),
+        manufacturer_data,
+        discoverable: Some(true),
+        local_name: Some("gatt_server".to_string()),
+        ..Default::default()
+    };
+    let adv_handle = adapter.advertise(le_advertisement).await?;
 
+    println!(
+        "Serving GATT service on Bluetooth adapter {}",
+        adapter.name()
+    );
+    let (service_control, service_handle) = service_control();
+    let (char_control, char_handle) = characteristic_control();
+    let app = Application {
+        services: vec![Service {
+            uuid: SERVICE_UUID,
+            primary: true,
+            characteristics: vec![Characteristic {
+                uuid: CHARACTERISTIC_UUID,
+                write: Some(CharacteristicWrite {
+                    write: true,
+                    write_without_response: true,
+                    method: CharacteristicWriteMethod::Io,
+                    ..Default::default()
+                }),
+                notify: Some(CharacteristicNotify {
+                    notify: true,
+                    method: CharacteristicNotifyMethod::Io,
+                    ..Default::default()
+                }),
+                control_handle: char_handle,
+                ..Default::default()
+            }],
+            control_handle: service_handle,
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+    let app_handle = adapter.serve_gatt_application(app).await?;
+
+    println!("Service handle is 0x{:x}", service_control.handle()?);
+    println!("Characteristic handle is 0x{:x}", char_control.handle()?);
+
+    println!("Service ready. Press enter to quit.");
     let stdin = BufReader::new(tokio::io::stdin());
     let mut lines = stdin.lines();
 
-    loop {
-        println!("\nWaiting for connection...");
+    let mut value: Vec<u8> = vec![0x10, 0x01, 0x01, 0x10];
+    let mut read_buf = Vec::new();
+    let mut reader_opt: Option<CharacteristicReader> = None;
+    let mut writer_opt: Option<CharacteristicWriter> = None;
+    let mut interval = interval(Duration::from_secs(1));
+    pin_mut!(char_control);
 
-        let (mut stream, sa) = tokio::select! {
-            l = listener.accept() => {
-                match l {
-                    Ok(v) => v,
-                    Err(err) => {
-                        println!("Accepting connection failed: {}", &err);
-                        continue;
+    loop {
+        tokio::select! {
+            _ = lines.next_line() => break,
+            evt = char_control.next() => {
+                match evt {
+                    Some(CharacteristicControlEvent::Write(req)) => {
+                        println!("Accepting write event with MTU {} from {}", req.mtu(), req.device_address());
+                        read_buf = vec![0; req.mtu()];
+                        reader_opt = Some(req.accept()?);
+                    },
+                    Some(CharacteristicControlEvent::Notify(notifier)) => {
+                        println!("Accepting notify request event with MTU {} from {}", notifier.mtu(), notifier.device_address());
+                        writer_opt = Some(notifier);
+                    },
+                    None => break,
+                }
+            }
+            _ = interval.tick() => {
+                println!("Decrementing each element by one");
+                for v in &mut *value {
+                    *v = v.saturating_sub(1);
+                }
+                println!("Value is {:x?}", &value);
+                if let Some(writer) = writer_opt.as_mut() {
+                    println!("Notifying with value {:x?}", &value);
+                    if let Err(err) = writer.write(&value).await {
+                        println!("Notification stream error: {}", &err);
+                        writer_opt = None;
                     }
                 }
-            },
-            _ = lines.next_line() => break,
-        };
-
-        // Allow exactly one pre-authorized Android device to connect.
-        let remote_addr = sa.addr.to_string().to_uppercase();
-        if remote_addr != allowed_addr {
-            println!("Rejected connection from {} (not allowed)", &remote_addr);
-            // Optionally inform the client then close.
-            let _ = stream.write_all(b"Rejected: not authorized\n").await;
-            let _ = stream.shutdown().await;
-            continue;
-        }
-
-        println!("Accepted connection from {}", &remote_addr);
-        println!("Sending hello");
-        if let Err(err) = stream.write_all(HELLO_MSG).await {
-            println!("Write failed: {}", &err);
-            continue;
-        }
-
-        loop {
-            let buf_size = 1024;
-            let mut buf = vec![0; buf_size as _];
-
-            let n = match stream.read(&mut buf).await {
-                Ok(0) => {
-                    println!("Stream ended");
-                    break;
+            }
+            read_res = async {
+                match &mut reader_opt {
+                    Some(reader) => reader.read(&mut read_buf).await,
+                    None => future::pending().await,
                 }
-                Ok(n) => n,
-                Err(err) => {
-                    println!("Read failed: {}", &err);
-                    break;
-                }
-            };
-            let buf = &buf[..n];
+            } => {
+                match read_res {
+                    Ok(0) => {
+                        println!("Write stream ended");
+                        reader_opt = None;
+                    }
+                    Ok(n) => {
+                        value = read_buf[0..n].to_vec();
+                        println!("Write request with {} bytes: {:x?}", n, &value);
 
-            println!("Echoing {} bytes", buf.len());
-            if let Err(err) = stream.write_all(&buf).await {
-                println!("Write failed: {}", &err);
-                continue;
+                        match str::from_utf8(&value) {
+                            Ok(command_str) => {
+                                // Trim any whitespace/newlines and handle the command
+                                let trimmed_command = command_str.trim();
+                                if !trimmed_command.is_empty() {
+                                    // Handle the command
+                                    handle_command(trimmed_command);
+                                }
+                            }
+                            Err(_) => {
+                                println!("Received non-UTF8 data, treating as raw bytes");
+                                // You could add binary command handling here if needed
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        println!("Write stream error: {}", &err);
+                        reader_opt = None;
+                    }
+                }
             }
         }
-
-        // After the authorized device disconnects, stop the server (exactly one device allowed).
-        println!("Authorized device disconnected — exiting.");
-        break;
     }
+
+    println!("Removing service and advertisement");
+    drop(app_handle);
+    drop(adv_handle);
+    sleep(Duration::from_secs(1)).await;
 
     Ok(())
 }

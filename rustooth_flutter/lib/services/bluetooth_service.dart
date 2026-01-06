@@ -2,13 +2,16 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart' as fb;
 import 'package:permission_handler/permission_handler.dart';
 
 class BluetoothService {
+  // UUIDs matching the Rust Server
+  static const String SERVER_SERVICE_UUID = "12345678-1234-5678-1234-56789abc0000";
+  static const String SERVER_CHAR_UUID    = "12345678-1234-5678-1234-56789abc0001";
+
   // Check if Bluetooth is supported by the device hardware.
   Future<bool> isBluetoothSupported() async {
     return await fb.FlutterBluePlus.isSupported;
   }
 
   // Check the current Bluetooth adapter state.
-  // Note: The initial state on iOS is often 'unknown'.
   Stream<fb.BluetoothAdapterState> get bluetoothState {
     return fb.FlutterBluePlus.adapterState;
   }
@@ -28,48 +31,33 @@ class BluetoothService {
     return await fb.FlutterBluePlus.bondedDevices;
   }
 
-  // Request permissions. Location permission is often required for scanning.
+  // Request permissions.
   Future<bool> requestPermissions() async {
-    // For Android 12 and above, Bluetooth permissions are required.
     Map<Permission, PermissionStatus> statuses = await [
       Permission.bluetoothScan,
       Permission.bluetoothConnect,
       Permission.location,
     ].request();
 
-    // Check if all required permissions are granted.
     if (statuses[Permission.bluetoothScan]!.isGranted &&
         statuses[Permission.location]!.isGranted) {
       if (await isBluetoothEnabled()) {
         return true;
-      } else {
-        print("Bluetooth is not enabled.");
-        return false;
       }
     }
-    print("Permissions not granted: $statuses");
     return false;
   }
 
-  // Start scanning for devices and return the results stream.
+  // Start scanning for devices. 
+  // Updated to prefer our specific service UUID for faster/cleaner scanning.
   Stream<List<fb.ScanResult>> scanForDevices({Duration? timeout}) {
-    // It's good practice to stop any ongoing scan before starting a new one.
     fb.FlutterBluePlus.stopScan();
 
-    // Start scanning with an optional timeout.
+    // We scan for EVERYTHING to be safe, but you could add 
+    // withServices: [fb.Guid(SERVER_SERVICE_UUID)] to strictly find only your PC.
     fb.FlutterBluePlus.startScan(timeout: timeout);
 
-    // Return the stream of scan results and print them for debugging.
-    return fb.FlutterBluePlus.scanResults.map((results) {
-      print("--- Found ${results.length} devices ---");
-      for (var result in results) {
-        String name = result.device.platformName.isNotEmpty
-            ? result.device.platformName
-            : "Unknown Device";
-        print("$name [${result.device.remoteId}]");
-      }
-      return results;
-    });
+    return fb.FlutterBluePlus.scanResults;
   }
 
   // Stop scanning for devices.
@@ -88,7 +76,6 @@ class BluetoothService {
   }
 
   // Discover services of a connected device.
-  // Important: You must call this after every connection.
   Future<List<fb.BluetoothService>> discoverServices(
     fb.BluetoothDevice device,
   ) async {
@@ -100,12 +87,21 @@ class BluetoothService {
     try {
       List<fb.BluetoothService> services = await device.discoverServices();
       for (var service in services) {
-        for (var characteristic in service.characteristics) {
-          if (characteristic.properties.write || characteristic.properties.writeWithoutResponse) {
-            return characteristic;
+        // STRICT CHECK: Only look inside our specific service
+        if (service.uuid.toString().toLowerCase() == SERVER_SERVICE_UUID.toLowerCase()) {
+          for (var c in service.characteristics) {
+            if (c.uuid.toString().toLowerCase() == SERVER_CHAR_UUID.toLowerCase()) {
+              print("Found correct Target Characteristic: ${c.uuid}");
+              return c;
+            }
           }
         }
       }
+      print("Target Characteristic $SERVER_CHAR_UUID NOT found on this device.");
+
+      // I removed the fallback loop here.
+      // Do NOT return random writable characteristics.
+
     } catch (e) {
       print("Error finding services: $e");
     }

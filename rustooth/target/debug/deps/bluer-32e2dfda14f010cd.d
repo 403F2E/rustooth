@@ -1,0 +1,18 @@
+/home/puppeteer/Desktop/Stuff/Projects/Dev/rustooth/rustooth/target/debug/deps/bluer-32e2dfda14f010cd.d: /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/lib.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/adapter.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/adv.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/agent.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/device.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/gatt/mod.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/gatt/local.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/gatt/remote.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/monitor.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/session.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/sys.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/uuid_ext.rs
+
+/home/puppeteer/Desktop/Stuff/Projects/Dev/rustooth/rustooth/target/debug/deps/libbluer-32e2dfda14f010cd.rmeta: /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/lib.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/adapter.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/adv.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/agent.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/device.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/gatt/mod.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/gatt/local.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/gatt/remote.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/monitor.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/session.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/sys.rs /home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/uuid_ext.rs
+
+/home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/lib.rs:
+/home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/adapter.rs:
+/home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/adv.rs:
+/home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/agent.rs:
+/home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/device.rs:
+/home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/gatt/mod.rs:
+/home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/gatt/local.rs:
+/home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/gatt/remote.rs:
+/home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/monitor.rs:
+/home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/session.rs:
+/home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/sys.rs:
+/home/puppeteer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bluer-0.17.4/src/uuid_ext.rs:
+
+# env-dep:CARGO_PKG_NAME=bluer

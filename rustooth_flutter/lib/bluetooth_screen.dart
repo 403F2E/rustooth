@@ -4,6 +4,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart' as fb;
 class BluetoothScreen extends StatefulWidget {
   final bool isScanning;
   final List<fb.ScanResult> scanResults;
+  final List<fb.BluetoothDevice> bondedDevices; // New field for bonded devices
   final VoidCallback toggleScan;
   final Function(fb.BluetoothDevice) connectToDevice;
   final bool isConnected;
@@ -14,6 +15,7 @@ class BluetoothScreen extends StatefulWidget {
     super.key,
     required this.isScanning,
     required this.scanResults,
+    required this.bondedDevices, // Require bonded devices list
     required this.toggleScan,
     required this.connectToDevice,
     required this.isConnected,
@@ -89,6 +91,15 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
       return remoteId.contains(_searchQuery) || name.contains(_searchQuery);
     }).toList();
 
+    // Filter bonded devices based on search query
+    final filteredBonded = widget.bondedDevices.where((device) {
+      if (_searchQuery.isEmpty) return true;
+      final remoteId = device.remoteId.toString().toLowerCase();
+      final name = device.platformName.toLowerCase();
+      return remoteId.contains(_searchQuery) || name.contains(_searchQuery);
+    }).toList();
+
+
     return Column(
       children: [
         Padding(
@@ -114,28 +125,53 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            itemCount: filteredResults.length,
-            itemBuilder: (context, index) {
-              final result = filteredResults[index];
-              final deviceName = _getDeviceName(result);
-              
-              return ListTile(
-                title: Text(deviceName),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(result.device.remoteId.toString()),
-                    // Optional: Show RSSI (Signal Strength)
-                    Text("Signal: ${result.rssi} dBm", style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
-                ),
-                trailing: ElevatedButton(
-                  child: const Text('Connect'),
-                  onPressed: () => widget.connectToDevice(result.device),
-                ),
-              );
-            },
+          child: ListView(
+            children: [
+               if (filteredBonded.isNotEmpty) ...[
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: Text("Paired Devices", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                  ),
+                  ...filteredBonded.map((device) => ListTile(
+                    title: Text(device.platformName.isNotEmpty ? device.platformName : "Unknown Paired Device"),
+                    subtitle: Text(device.remoteId.toString()),
+                    trailing: ElevatedButton(
+                      child: const Text('Connect'),
+                      onPressed: () => widget.connectToDevice(device),
+                    ),
+                  )),
+                  const Divider(),
+               ],
+               
+               if (filteredResults.isNotEmpty || widget.isScanning) ...[
+                 const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: Text("Available Devices", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                  ),
+                 ...filteredResults.map((result) {
+                    final deviceName = _getDeviceName(result);
+                    return ListTile(
+                      title: Text(deviceName),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(result.device.remoteId.toString()),
+                          Text("Signal: ${result.rssi} dBm", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                      trailing: ElevatedButton(
+                        child: const Text('Connect'),
+                        onPressed: () => widget.connectToDevice(result.device),
+                      ),
+                    );
+                 }),
+               ] else if (filteredBonded.isEmpty) ...[
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(child: Text("No devices found. Start scanning.")),
+                  )
+               ]
+            ],
           ),
         ),
       ],
