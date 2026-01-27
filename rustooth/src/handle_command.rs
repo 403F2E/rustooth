@@ -62,8 +62,7 @@ pub fn handle_command(command_str: &str) {
         "F12" => simulate_key(Key::F12),
 
         _ => {
-            // Check if the entire string is just letters/numbers (for typing)
-            // This is a simple check; you might want to allow spaces/punctuation.
+            // Check if the entire string is just letters/numbers/spaces/punctuations (for typing)
             if command_str
                 .chars()
                 .all(|c| c.is_alphanumeric() || c.is_whitespace() || c.is_ascii_punctuation())
